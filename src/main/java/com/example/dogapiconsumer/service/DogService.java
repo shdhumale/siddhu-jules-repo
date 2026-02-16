@@ -2,6 +2,10 @@ package com.example.dogapiconsumer.service;
 
 import com.example.dogapiconsumer.model.DogApiListResponse;
 import com.example.dogapiconsumer.model.DogApiSingleResponse;
+import com.example.dogapiconsumer.model.DogCeoResponse;
+import com.example.dogapiconsumer.model.DogImage;
+import com.example.dogapiconsumer.model.DogImageAttributes;
+import com.example.dogapiconsumer.model.DogImageResponse;
 import com.example.dogapiconsumer.model.FactResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +23,9 @@ public class DogService {
     @Value("${dog.api.facts-url}")
     private String factsUrl;
 
+    @Value("${dog.api.random-image-url}")
+    private String randomImageUrl;
+
     @Autowired
     public DogService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -35,5 +42,22 @@ public class DogService {
 
     public FactResponse getFacts() {
         return restTemplate.getForObject(factsUrl, FactResponse.class);
+    }
+
+    public DogImageResponse getRandomDogImage() {
+        DogCeoResponse ceoResponse = restTemplate.getForObject(randomImageUrl, DogCeoResponse.class);
+
+        DogImageAttributes attributes = new DogImageAttributes();
+        attributes.setUrl(ceoResponse.getMessage());
+
+        DogImage dogImage = new DogImage();
+        dogImage.setId("random");
+        dogImage.setType("dog_image");
+        dogImage.setAttributes(attributes);
+
+        DogImageResponse response = new DogImageResponse();
+        response.setData(dogImage);
+
+        return response;
     }
 }

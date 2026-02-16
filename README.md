@@ -8,6 +8,7 @@ A Spring Boot application that consumes the Dog API and exposes its own REST API
 
 - `GET /api/breeds`: Returns a list of all dog breeds.
 - `GET /api/breeds/{id}`: Returns details of a specific dog breed by its ID.
+- `GET /api/images/random`: Returns a random dog image.
 
 ## How to run
 

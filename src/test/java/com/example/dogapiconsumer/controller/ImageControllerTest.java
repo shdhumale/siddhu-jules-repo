@@ -43,4 +43,24 @@ public class ImageControllerTest {
                 .andExpect(jsonPath("$.data.type").value("dog_image"))
                 .andExpect(jsonPath("$.data.attributes.url").value("https://images.dog.ceo/breeds/beagle/n02088364_11005.jpg"));
     }
+
+    @Test
+    public void testGetHttpDogImage() throws Exception {
+        DogImageResponse response = new DogImageResponse();
+        DogImage dogImage = new DogImage();
+        dogImage.setId("404");
+        dogImage.setType("http_dog_image");
+        DogImageAttributes attributes = new DogImageAttributes();
+        attributes.setUrl("https://http.dog/404.jpg");
+        dogImage.setAttributes(attributes);
+        response.setData(dogImage);
+
+        when(dogService.getHttpDogImage(404)).thenReturn(response);
+
+        mockMvc.perform(get("/api/images/http/404"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value("404"))
+                .andExpect(jsonPath("$.data.type").value("http_dog_image"))
+                .andExpect(jsonPath("$.data.attributes.url").value("https://http.dog/404.jpg"));
+    }
 }

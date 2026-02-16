@@ -26,6 +26,9 @@ public class DogService {
     @Value("${dog.api.random-image-url}")
     private String randomImageUrl;
 
+    @Value("${http.dog.base-url}")
+    private String httpDogBaseUrl;
+
     @Autowired
     public DogService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -53,6 +56,21 @@ public class DogService {
         DogImage dogImage = new DogImage();
         dogImage.setId("random");
         dogImage.setType("dog_image");
+        dogImage.setAttributes(attributes);
+
+        DogImageResponse response = new DogImageResponse();
+        response.setData(dogImage);
+
+        return response;
+    }
+
+    public DogImageResponse getHttpDogImage(int code) {
+        DogImageAttributes attributes = new DogImageAttributes();
+        attributes.setUrl(httpDogBaseUrl + code + ".jpg");
+
+        DogImage dogImage = new DogImage();
+        dogImage.setId(String.valueOf(code));
+        dogImage.setType("http_dog_image");
         dogImage.setAttributes(attributes);
 
         DogImageResponse response = new DogImageResponse();

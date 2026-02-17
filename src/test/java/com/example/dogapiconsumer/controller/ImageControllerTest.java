@@ -4,10 +4,13 @@ import com.example.dogapiconsumer.model.DogImage;
 import com.example.dogapiconsumer.model.DogImageAttributes;
 import com.example.dogapiconsumer.model.DogImageResponse;
 import com.example.dogapiconsumer.service.DogService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import com.example.dogapiconsumer.advice.UnifiedResponseAdvice;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.when;
@@ -16,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ImageController.class)
+@Import(UnifiedResponseAdvice.class)
 public class ImageControllerTest {
 
     @Autowired
@@ -23,6 +27,20 @@ public class ImageControllerTest {
 
     @MockBean
     private DogService dogService;
+
+    @BeforeEach
+    public void setup() {
+        DogImageResponse imageResponse = new DogImageResponse();
+        DogImage dogImage = new DogImage();
+        dogImage.setId("200");
+        dogImage.setType("http_dog_image");
+        DogImageAttributes attributes = new DogImageAttributes();
+        attributes.setUrl("https://http.dog/200.jpg");
+        dogImage.setAttributes(attributes);
+        imageResponse.setData(dogImage);
+
+        when(dogService.getHttpDogImage(200)).thenReturn(imageResponse);
+    }
 
     @Test
     public void testGetRandomDogImage() throws Exception {
@@ -39,9 +57,10 @@ public class ImageControllerTest {
 
         mockMvc.perform(get("/api/images/random"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("random"))
-                .andExpect(jsonPath("$.data.type").value("dog_image"))
-                .andExpect(jsonPath("$.data.attributes.url").value("https://images.dog.ceo/breeds/beagle/n02088364_11005.jpg"));
+                .andExpect(jsonPath("$.response.data.id").value("random"))
+                .andExpect(jsonPath("$.response.data.type").value("dog_image"))
+                .andExpect(jsonPath("$.response.data.attributes.url").value("https://images.dog.ceo/breeds/beagle/n02088364_11005.jpg"))
+                .andExpect(jsonPath("$.image.data.id").value("200"));
     }
 
     @Test
@@ -59,8 +78,9 @@ public class ImageControllerTest {
 
         mockMvc.perform(get("/api/images/http/404"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("404"))
-                .andExpect(jsonPath("$.data.type").value("http_dog_image"))
-                .andExpect(jsonPath("$.data.attributes.url").value("https://http.dog/404.jpg"));
+                .andExpect(jsonPath("$.response.data.id").value("404"))
+                .andExpect(jsonPath("$.response.data.type").value("http_dog_image"))
+                .andExpect(jsonPath("$.response.data.attributes.url").value("https://http.dog/404.jpg"))
+                .andExpect(jsonPath("$.image.data.id").value("200"));
     }
 }

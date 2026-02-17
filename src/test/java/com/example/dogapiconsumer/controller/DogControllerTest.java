@@ -7,10 +7,13 @@ import com.example.dogapiconsumer.model.DogImage;
 import com.example.dogapiconsumer.model.DogImageAttributes;
 import com.example.dogapiconsumer.model.DogImageResponse;
 import com.example.dogapiconsumer.service.DogService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import com.example.dogapiconsumer.advice.UnifiedResponseAdvice;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.HttpClientErrorException;
@@ -23,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(DogController.class)
+@Import(UnifiedResponseAdvice.class)
 public class DogControllerTest {
 
     @Autowired
@@ -30,6 +34,24 @@ public class DogControllerTest {
 
     @MockBean
     private DogService dogService;
+
+    private DogImageResponse mockImageResponse(int code) {
+        DogImageResponse imageResponse = new DogImageResponse();
+        DogImage dogImage = new DogImage();
+        dogImage.setId(String.valueOf(code));
+        dogImage.setType("http_dog_image");
+        DogImageAttributes attributes = new DogImageAttributes();
+        attributes.setUrl("https://http.dog/" + code + ".jpg");
+        dogImage.setAttributes(attributes);
+        imageResponse.setData(dogImage);
+        return imageResponse;
+    }
+
+    @BeforeEach
+    public void setup() {
+        when(dogService.getHttpDogImage(200)).thenReturn(mockImageResponse(200));
+        when(dogService.getHttpDogImage(404)).thenReturn(mockImageResponse(404));
+    }
 
     @Test
     public void testGetAllBreeds() throws Exception {
@@ -40,7 +62,8 @@ public class DogControllerTest {
 
         mockMvc.perform(get("/api/breeds"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$.response.data").isArray())
+                .andExpect(jsonPath("$.image.data.id").value("200"));
     }
 
     @Test
@@ -54,27 +77,18 @@ public class DogControllerTest {
 
         mockMvc.perform(get("/api/breeds/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("1"));
+                .andExpect(jsonPath("$.response.data.id").value("1"))
+                .andExpect(jsonPath("$.image.data.id").value("200"));
     }
 
     @Test
     public void testGetBreedByIdNotFound() throws Exception {
         when(dogService.getBreedById("invalid")).thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
-        DogImageResponse errorResponse = new DogImageResponse();
-        DogImage dogImage = new DogImage();
-        dogImage.setId("404");
-        dogImage.setType("http_dog_image");
-        DogImageAttributes attributes = new DogImageAttributes();
-        attributes.setUrl("https://http.dog/404.jpg");
-        dogImage.setAttributes(attributes);
-        errorResponse.setData(dogImage);
-
-        when(dogService.getHttpDogImage(404)).thenReturn(errorResponse);
-
         mockMvc.perform(get("/api/breeds/invalid"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.data.id").value("404"))
-                .andExpect(jsonPath("$.data.attributes.url").value("https://http.dog/404.jpg"));
+                .andExpect(jsonPath("$.response.error").value("404 NOT_FOUND"))
+                .andExpect(jsonPath("$.image.data.id").value("404"))
+                .andExpect(jsonPath("$.image.data.attributes.url").value("https://http.dog/404.jpg"));
     }
 }
